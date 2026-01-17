@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoVault - Portfolio Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #151922;
+            --bg-tertiary: #1d2330;
+            --accent-green: #00ff88;
+            --accent-red: #ff4466;
+            --accent-blue: #00aaff;
+            --accent-yellow: #ffcc00;
+            --text-primary: #ffffff;
+            --text-secondary: #8b95a8;
+            --border: #2a3344;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 255, 136, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(0, 170, 255, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 40px;
+            animation: slideDown 0.6s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .user-email {
+            color: var(--text-secondary);
+            font-size: 12px;
+            padding: 8px 15px;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            background: #00dd77;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-blue);
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        .btn-refresh {
+            background: transparent;
+            border: 1px solid var(--accent-blue);
+            color: var(--accent-blue);
+            padding: 10px 20px;
+        }
+
+        .btn-refresh:hover {
+            background: rgba(0, 170, 255, 0.1);
+        }
+
+        /* Auth Screen */
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            animation: fadeIn 0.8s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .auth-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 50px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .auth-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 13px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.1);
+        }
+
+        .auth-toggle {
+            margin-top: 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .auth-toggle button {
+            background: none;
+            border: none;
+            color: var(--accent-blue);
+            padding: 0;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+            animation: slideUp 0.6s ease 0.2s backwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .stat-change.positive {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--accent-green);
+        }
+
+        .stat-change.negative {
+            background: rgba(255, 68, 102, 0.1);
+            color: var(--accent-red);
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            background: var(--bg-secondary);
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .view-toggle button {
+            padding: 8px 16px;
+            font-size: 11px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            border-radius: 4px;
+        }
+
+        .view-toggle button.active {
+            background: var(--accent-blue);
+            color: var(--bg-primary);
+        }
+
+        /* Wallet List */
+        .wallet-list {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .wallet-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .wallet-card:hover {
+            border-color: var(--accent-green);
+            transform: translateX(4px);
+        }
+
+        .wallet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+
+        .wallet-info h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .wallet-address {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .chain-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .chain-ethereum { background: rgba(98, 126, 234, 0.2); color: #627eea; }
+        .chain-bsc { background: rgba(243, 186, 47, 0.2); color: #f3ba2f; }
+        .chain-polygon { background: rgba(130, 71, 229, 0.2); color: #8247e5; }
+        .chain-solana { background: rgba(0, 255, 163, 0.2); color: #00ffa3; }
+        .chain-avalanche { background: rgba(232, 65, 66, 0.2); color: #e84142; }
+
+        .wallet-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .wallet-stat-item {
+            text-align: center;
+        }
+
+        .wallet-stat-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .wallet-stat-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* Asset List */
+        .asset-list {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .asset-item {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 20px;
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .asset-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .asset-item:last-child {
+            border-bottom: none;
+        }
+
+        .asset-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .asset-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .asset-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .asset-symbol {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .asset-value {
+            text-align: right;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 15px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 20px;
+                align-items: flex-start;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-value {
+                font-size: 28px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .wallet-stats {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .asset-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .asset-value {
+                text-align: left;
+            }
+
+            .auth-box {
+                padding: 30px;
+            }
+
+            .modal-content {
+                padding: 25px;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .empty-state-text {
+            font-size: 13px;
+            margin-bottom: 30px;
+        }
+
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(0, 170, 255, 0.1);
+        }
+
+        .error-message {
+            background: rgba(255, 68, 102, 0.1);
+            border: 1px solid var(--accent-red);
+            color: var(--accent-red);
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container" id="app">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading CryptoVault...</p>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://tkydzkqisuuqbdcwyklj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRreWR6a3Fpc3V1cWJkY3d5a2xqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NjYzNDcsImV4cCI6MjA4NDI0MjM0N30.uqS0jtF8Wg2wckCevMNYp8RM6om0pTqwwycbFqEdCZ8';
+        
+        // CoinGecko API Configuration
+        const COINGECKO_API_KEY = 'CG-Vh4iZic6w8ifA3s7B5FFJBh4';
+        const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
+        
+        // Moralis API Configuration
+        const MORALIS_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjEwZDQ3MWM5LTQwMGYtNGZmOS1iMzlhLWNiNzI0NWYzMTBhZiIsIm9yZ0lkIjoiNDkwODA5IiwidXNlcklkIjoiNTA0OTc2IiwidHlwZUlkIjoiNDQ4ZWVlNjQtZDRlYS00YTY0LTk2OWQtNTE3NTZhNDIwNDQ4IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3Njg2NjcxMjIsImV4cCI6NDkyNDQyNzEyMn0.Jg6jnSWGEXFSptiBXpQq7uAJK1sbCS8EvUYM80h7xV0';
+        const MORALIS_BASE_URL = 'https://deep-index.moralis.io/api/v2.2';
+        
+        // Chain ID mapping for Moralis
+        const CHAIN_IDS = {
+            'ethereum': 'eth',
+            'bsc': 'bsc',
+            'polygon': 'polygon',
+            'avalanche': 'avalanche',
+            'solana': 'solana'
+        };
+        
+        // Initialize Supabase client
+        const { createClient } = window.supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Global state
+        let currentUser = null;
+        let wallets = [];
+        let assets = [];
+        let currentView = 'overview';
+        let priceCache = {};
+        let lastRefresh = null;
+        
+        // Rate limiter for CoinGecko API (30 calls/min)
+        class RateLimiter {
+            constructor(maxCalls = 30, perMinutes = 1) {
+                this.maxCalls = maxCalls;
+                this.perMinutes = perMinutes;
+                this.calls = [];
+            }
+            
+            async throttle() {
+                const now = Date.now();
+                const windowStart = now - (this.perMinutes * 60 * 1000);
+                
+                this.calls = this.calls.filter(time => time > windowStart);
+                
+                if (this.calls.length >= this.maxCalls) {
+                    const oldestCall = this.calls[0];
+                    const waitTime = oldestCall + (this.perMinutes * 60 * 1000) - now + 100;
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    return this.throttle();
+                }
+                
+                this.calls.push(now);
+            }
+        }
+        
+        const rateLimiter = new RateLimiter(25, 1); // Slightly under limit for safety
+
+        // Initialize app
+        async function initApp() {
+            // Check for existing session
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            if (session) {
+                currentUser = session.user;
+                await loadUserData();
+                renderDashboard();
+            } else {
+                renderAuth();
+            }
+
+            // Listen for auth changes
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_IN') {
+                    currentUser = session.user;
+                    loadUserData();
+                    renderDashboard();
+                } else if (event === 'SIGNED_OUT') {
+                    currentUser = null;
+                    wallets = [];
+                    assets = [];
+                    renderAuth();
+                }
+            });
+        }
+
+        // Auth Functions
+        async function signUp(email, password) {
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password
+            });
+
+            if (error) {
+                showError(error.message);
+            } else {
+                showMessage('Check your email for confirmation link!');
+            }
+        }
+
+        async function signIn(email, password) {
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) {
+                showError(error.message);
+            }
+        }
+
+        async function signOut() {
+            await supabaseClient.auth.signOut();
+        }
+
+        // Data Management
+        async function loadUserData() {
+            // Load wallets
+            const { data: walletsData, error: walletsError } = await supabaseClient
+                .from('wallets')
+                .select('*')
+                .eq('user_id', currentUser.id);
+
+            if (!walletsError && walletsData) {
+                wallets = walletsData;
+                await refreshPrices();
+            }
+        }
+
+        async function addWallet(address, chain, label) {
+            const { data, error } = await supabaseClient
+                .from('wallets')
+                .insert([
+                    { user_id: currentUser.id, address, chain, label }
+                ])
+                .select();
+
+            if (error) {
+                showError(error.message);
+            } else {
+                wallets.push(data[0]);
+                await refreshPrices();
+                renderDashboard();
+                closeModal();
+            }
+        }
+
+        async function deleteWallet(walletId) {
+            const { error } = await supabaseClient
+                .from('wallets')
+                .delete()
+                .eq('id', walletId);
+
+            if (error) {
+                showError(error.message);
+            } else {
+                wallets = wallets.filter(w => w.id !== walletId);
+                renderDashboard();
+            }
+        }
+
+        // Price Data Functions with Real Moralis Integration
+        async function refreshPrices() {
+            try {
+                lastRefresh = new Date();
+                
+                if (wallets.length === 0) {
+                    assets = [];
+                    renderDashboard();
+                    return;
+                }
+                
+                showLoadingIndicator('Fetching real wallet balances...');
+                
+                assets = [];
+                const allTokens = new Set();
+                
+                // Fetch real balances for each wallet using Moralis
+                for (const wallet of wallets) {
+                    try {
+                        const chainId = CHAIN_IDS[wallet.chain];
+                        
+                        if (!chainId) {
+                            console.warn(`Chain ${wallet.chain} not supported by Moralis yet`);
+                            continue;
+                        }
+                        
+                        // Get native balance (ETH, BNB, MATIC, etc.)
+                        const nativeBalanceResponse = await fetch(
+                            `${MORALIS_BASE_URL}/${wallet.address}/balance?chain=${chainId}`,
+                            {
+                                headers: {
+                                    'X-API-Key': MORALIS_API_KEY
+                                }
+                            }
+                        );
+                        
+                        if (nativeBalanceResponse.ok) {
+                            const nativeData = await nativeBalanceResponse.json();
+                            const nativeBalance = parseFloat(nativeData.balance) / 1e18; // Convert from wei
+                            
+                            if (nativeBalance > 0) {
+                                // Get native token symbol
+                                const nativeSymbol = getNativeSymbol(wallet.chain);
+                                allTokens.add(nativeSymbol.toLowerCase());
+                                
+                                assets.push({
+                                    symbol: nativeSymbol,
+                                    name: getNativeName(wallet.chain),
+                                    balance: nativeBalance,
+                                    price: 0, // Will be filled by CoinGecko
+                                    change24h: 0,
+                                    marketCap: 0,
+                                    chain: wallet.chain,
+                                    walletId: wallet.id,
+                                    isNative: true
+                                });
+                            }
+                        }
+                        
+                        // Get ERC-20/SPL token balances
+                        if (chainId !== 'solana') {
+                            const tokensResponse = await fetch(
+                                `${MORALIS_BASE_URL}/${wallet.address}/erc20?chain=${chainId}`,
+                                {
+                                    headers: {
+                                        'X-API-Key': MORALIS_API_KEY
+                                    }
+                                }
+                            );
+                            
+                            if (tokensResponse.ok) {
+                                const tokensData = await tokensResponse.json();
+                                
+                                // Add each token with balance > 0
+                                tokensData.forEach(token => {
+                                    const balance = parseFloat(token.balance) / Math.pow(10, token.decimals);
+                                    
+                                    if (balance > 0.0001) { // Filter out dust
+                                        allTokens.add(token.symbol.toLowerCase());
+                                        
+                                        assets.push({
+                                            symbol: token.symbol,
+                                            name: token.name,
+                                            balance: balance,
+                                            price: 0,
+                                            change24h: 0,
+                                            marketCap: 0,
+                                            chain: wallet.chain,
+                                            walletId: wallet.id,
+                                            contractAddress: token.token_address,
+                                            isNative: false
+                                        });
+                                    }
+                                });
+                            }
+                        } else {
+                            // Solana tokens
+                            const solTokensResponse = await fetch(
+                                `${MORALIS_BASE_URL}/wallets/${wallet.address}/tokens?network=mainnet`,
+                                {
+                                    headers: {
+                                        'X-API-Key': MORALIS_API_KEY
+                                    }
+                                }
+                            );
+                            
+                            if (solTokensResponse.ok) {
+                                const solTokensData = await solTokensResponse.json();
+                                
+                                solTokensData.forEach(token => {
+                                    if (token.amount && parseFloat(token.amount) > 0) {
+                                        const balance = parseFloat(token.amount);
+                                        allTokens.add(token.symbol?.toLowerCase() || 'unknown');
+                                        
+                                        assets.push({
+                                            symbol: token.symbol || 'UNKNOWN',
+                                            name: token.name || 'Unknown Token',
+                                            balance: balance,
+                                            price: 0,
+                                            change24h: 0,
+                                            marketCap: 0,
+                                            chain: wallet.chain,
+                                            walletId: wallet.id,
+                                            mint: token.mint,
+                                            isNative: false
+                                        });
+                                    }
+                                });
+                            }
+                        }
+                        
+                    } catch (error) {
+                        console.error(`Error fetching balance for wallet ${wallet.address}:`, error);
+                    }
+                }
+                
+                // If no assets found, show helpful message
+                if (assets.length === 0) {
+                    hideLoadingIndicator();
+                    showMessage('No tokens found in your wallets. Make sure your wallet addresses are correct and have balances.');
+                    renderDashboard();
+                    return;
+                }
+                
+                // Now fetch prices from CoinGecko for all tokens
+                showLoadingIndicator(`Fetching prices for ${assets.length} tokens...`);
+                
+                // Map common symbols to CoinGecko IDs
+                const symbolToCoinId = {
+                    'eth': 'ethereum',
+                    'weth': 'weth',
+                    'btc': 'bitcoin',
+                    'wbtc': 'wrapped-bitcoin',
+                    'bnb': 'binancecoin',
+                    'sol': 'solana',
+                    'matic': 'matic-network',
+                    'avax': 'avalanche-2',
+                    'usdc': 'usd-coin',
+                    'usdt': 'tether',
+                    'dai': 'dai',
+                    'busd': 'binance-usd',
+                    'uni': 'uniswap',
+                    'link': 'chainlink',
+                    'aave': 'aave',
+                    'crv': 'curve-dao-token',
+                    'comp': 'compound-governance-token',
+                    'mkr': 'maker',
+                    'snx': 'havven',
+                    'yfi': 'yearn-finance',
+                    'sushi': 'sushi',
+                    'cake': 'pancakeswap-token',
+                    'doge': 'dogecoin',
+                    'shib': 'shiba-inu',
+                    'ada': 'cardano',
+                    'dot': 'polkadot',
+                    'trx': 'tron',
+                    'xlm': 'stellar',
+                    'xrp': 'ripple'
+                };
+                
+                // Build list of coin IDs to fetch
+                const coinIds = new Set();
+                assets.forEach(asset => {
+                    const coinId = symbolToCoinId[asset.symbol.toLowerCase()];
+                    if (coinId) {
+                        coinIds.add(coinId);
+                    }
+                });
+                
+                if (coinIds.size > 0) {
+                    await rateLimiter.throttle();
+                    
+                    const priceResponse = await fetch(
+                        `${COINGECKO_BASE_URL}/simple/price?ids=${Array.from(coinIds).join(',')}&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&x_cg_demo_api_key=${COINGECKO_API_KEY}`
+                    );
+                    
+                    if (priceResponse.ok) {
+                        const prices = await priceResponse.json();
+                        
+                        // Update asset prices
+                        assets = assets.map(asset => {
+                            const coinId = symbolToCoinId[asset.symbol.toLowerCase()];
+                            const priceData = prices[coinId];
+                            
+                            if (priceData) {
+                                return {
+                                    ...asset,
+                                    price: priceData.usd || 0,
+                                    change24h: priceData.usd_24h_change || 0,
+                                    marketCap: priceData.usd_market_cap || 0
+                                };
+                            }
+                            
+                            return asset;
+                        });
+                    }
+                }
+                
+                // Filter out assets with no price data (might be unknown tokens)
+                const validAssets = assets.filter(a => a.price > 0);
+                const unknownAssets = assets.filter(a => a.price === 0);
+                
+                if (unknownAssets.length > 0) {
+                    console.log(`${unknownAssets.length} tokens without price data:`, unknownAssets.map(a => a.symbol));
+                }
+                
+                assets = validAssets;
+                
+                // Store in cache
+                priceCache = {
+                    timestamp: Date.now()
+                };
+                
+                hideLoadingIndicator();
+                
+                if (assets.length > 0) {
+                    const totalValue = calculateTotalValue();
+                    showMessage(`✅ Loaded ${assets.length} tokens worth $${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`);
+                }
+                
+                renderDashboard();
+                
+            } catch (error) {
+                console.error('Error fetching prices:', error);
+                hideLoadingIndicator();
+                showError('Failed to fetch wallet data. Please check your wallet addresses and try again.');
+                renderDashboard();
+            }
+        }
+        
+        function getNativeSymbol(chain) {
+            const symbols = {
+                'ethereum': 'ETH',
+                'bsc': 'BNB',
+                'polygon': 'MATIC',
+                'avalanche': 'AVAX',
+                'solana': 'SOL'
+            };
+            return symbols[chain] || 'UNKNOWN';
+        }
+        
+        function getNativeName(chain) {
+            const names = {
+                'ethereum': 'Ethereum',
+                'bsc': 'Binance Coin',
+                'polygon': 'Polygon',
+                'avalanche': 'Avalanche',
+                'solana': 'Solana'
+            };
+            return names[chain] || 'Unknown';
+        }
+        
+        function showLoadingIndicator(message) {
+            // Remove existing indicator
+            const existing = document.getElementById('loading-indicator');
+            if (existing) existing.remove();
+            
+            const indicator = document.createElement('div');
+            indicator.id = 'loading-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--bg-secondary);
+                border: 1px solid var(--accent-blue);
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 9999;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideDown 0.3s ease;
+                max-width: 300px;
+            `;
+            indicator.innerHTML = `
+                <div style="width: 20px; height: 20px; border: 2px solid var(--accent-blue); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <span style="color: var(--text-primary); font-size: 12px;">${message}</span>
+            `;
+            document.body.appendChild(indicator);
+        }
+        
+        function hideLoadingIndicator() {
+            const indicator = document.getElementById('loading-indicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        function generateMockAssets() {
+            const mockAssets = [
+                { symbol: 'BTC', name: 'Bitcoin', balance: 0.5, price: 65432.10, chain: 'ethereum' },
+                { symbol: 'ETH', name: 'Ethereum', balance: 12.3, price: 3245.67, chain: 'ethereum' },
+                { symbol: 'BNB', name: 'Binance Coin', balance: 45.2, price: 412.34, chain: 'bsc' },
+                { symbol: 'SOL', name: 'Solana', balance: 150.0, price: 98.76, chain: 'solana' },
+                { symbol: 'MATIC', name: 'Polygon', balance: 5000, price: 0.87, chain: 'polygon' },
+                { symbol: 'AVAX', name: 'Avalanche', balance: 78.5, price: 34.21, chain: 'avalanche' },
+            ];
+
+            return wallets.length > 0 ? mockAssets : [];
+        }
+
+        function calculateTotalValue() {
+            return assets.reduce((total, asset) => total + (asset.balance * asset.price), 0);
+        }
+
+        function calculatePnL() {
+            // Mock 24h change - in production, compare with previous prices
+            const randomChange = (Math.random() - 0.5) * 10;
+            return {
+                value: calculateTotalValue() * (randomChange / 100),
+                percentage: randomChange
+            };
+        }
+
+        // Render Functions
+        function renderAuth() {
+            document.getElementById('app').innerHTML = `
+                <div class="auth-container">
+                    <div class="auth-box">
+                        <h1 class="auth-title">CryptoVault</h1>
+                        <p class="auth-subtitle">Track your multi-chain crypto portfolio</p>
+                        
+                        <div id="auth-error"></div>
+                        
+                        <form id="auth-form">
+                            <div class="form-group">
+                                <label>Email Address</label>
+                                <input type="email" id="email" required placeholder="your@email.com">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Password</label>
+                                <input type="password" id="password" required placeholder="••••••••">
+                            </div>
+                            
+                            <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">
+                                <span id="auth-button-text">Sign In</span>
+                            </button>
+                        </form>
+                        
+                        <div class="auth-toggle">
+                            <span id="toggle-text">Don't have an account?</span>
+                            <button id="toggle-mode">Sign Up</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            let isSignUp = false;
+            
+            document.getElementById('auth-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                if (isSignUp) {
+                    await signUp(email, password);
+                } else {
+                    await signIn(email, password);
+                }
+            });
+
+            document.getElementById('toggle-mode').addEventListener('click', () => {
+                isSignUp = !isSignUp;
+                document.getElementById('auth-button-text').textContent = isSignUp ? 'Sign Up' : 'Sign In';
+                document.getElementById('toggle-text').textContent = isSignUp ? 'Already have an account?' : "Don't have an account?";
+                document.getElementById('toggle-mode').textContent = isSignUp ? 'Sign In' : 'Sign Up';
+            });
+        }
+
+        function renderDashboard() {
+            const totalValue = calculateTotalValue();
+            const pnl = calculatePnL();
+            const assetCount = new Set(assets.map(a => a.symbol)).size;
+            const walletCount = wallets.length;
+
+            document.getElementById('app').innerHTML = `
+                <header>
+                    <div class="logo">CRYPTOVAULT</div>
+                    <div class="header-actions">
+                        <div style="display: flex; align-items: center; gap: 15px; color: var(--text-secondary); font-size: 10px; background: var(--bg-secondary); padding: 8px 15px; border-radius: 6px; border: 1px solid var(--border);">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="color: var(--accent-blue);">CG:</span>
+                                <span>${rateLimiter.calls.length}/30/min</span>
+                            </div>
+                            <span style="color: var(--border);">|</span>
+                            <span style="color: ${lastRefresh ? 'var(--accent-green)' : 'var(--text-secondary)'};">
+                                ${lastRefresh ? '🟢 Live Data' : '⚪ No Data'}
+                            </span>
+                        </div>
+                        <button class="btn-refresh" onclick="refreshPrices()">
+                            ↻ Refresh Prices
+                        </button>
+                        <span class="user-email">${currentUser.email}</span>
+                        <button class="btn-secondary" onclick="signOut()">Sign Out</button>
+                    </div>
+                </header>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Portfolio Value</div>
+                        <div class="stat-value">$${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        <span class="stat-change ${pnl.percentage >= 0 ? 'positive' : 'negative'}">
+                            ${pnl.percentage >= 0 ? '↑' : '↓'} ${Math.abs(pnl.percentage).toFixed(2)}% ($${Math.abs(pnl.value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                        </span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Active Wallets</div>
+                        <div class="stat-value">${walletCount}</div>
+                        <span class="stat-change positive">Across ${new Set(wallets.map(w => w.chain)).size} chains</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-label">Assets Held</div>
+                        <div class="stat-value">${assetCount}</div>
+                        <span class="stat-change positive">Last updated: ${lastRefresh ? new Date(lastRefresh).toLocaleTimeString() : 'Never'}</span>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <div class="view-toggle">
+                        <button class="${currentView === 'overview' ? 'active' : ''}" onclick="changeView('overview')">Overview</button>
+                        <button class="${currentView === 'wallets' ? 'active' : ''}" onclick="changeView('wallets')">Wallets</button>
+                        <button class="${currentView === 'assets' ? 'active' : ''}" onclick="changeView('assets')">Assets</button>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-secondary" onclick="openImportCSVModal()">📥 Import CSV</button>
+                        <button class="btn-primary" onclick="openAddWalletModal()">+ Add Wallet</button>
+                    </div>
+                </div>
+
+                <div id="content">
+                    ${renderContent()}
+                </div>
+
+                ${renderModal()}
+            `;
+        }
+
+        function renderContent() {
+            if (wallets.length === 0) {
+                return `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔐</div>
+                        <h2 class="empty-state-title">No Wallets Added</h2>
+                        <p class="empty-state-text">Add your first wallet to start tracking your portfolio</p>
+                        <button class="btn-primary" onclick="openAddWalletModal()">Add Your First Wallet</button>
+                    </div>
+                `;
+            }
+
+            switch (currentView) {
+                case 'wallets':
+                    return renderWallets();
+                case 'assets':
+                    return renderAssets();
+                default:
+                    return renderOverview();
+            }
+        }
+
+        function renderOverview() {
+            return `
+                <div class="wallet-list">
+                    ${wallets.map(wallet => {
+                        const walletAssets = assets.filter(a => a.walletId === wallet.id);
+                        const walletValue = walletAssets.reduce((sum, a) => sum + (a.balance * a.price), 0);
+                        const avgChange = walletAssets.length > 0 
+                            ? walletAssets.reduce((sum, a) => sum + (a.change24h || 0), 0) / walletAssets.length 
+                            : 0;
+                        
+                        return `
+                            <div class="wallet-card" onclick="viewWalletDetails('${wallet.id}')">
+                                <div class="wallet-header">
+                                    <div class="wallet-info">
+                                        <h3>${wallet.label || 'Unnamed Wallet'}</h3>
+                                        <div class="wallet-address">${wallet.address.slice(0, 10)}...${wallet.address.slice(-8)}</div>
+                                    </div>
+                                    <span class="chain-badge chain-${wallet.chain}">${wallet.chain}</span>
+                                </div>
+                                <div class="wallet-stats">
+                                    <div class="wallet-stat-item">
+                                        <div class="wallet-stat-label">Value</div>
+                                        <div class="wallet-stat-value">$${walletValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                                    </div>
+                                    <div class="wallet-stat-item">
+                                        <div class="wallet-stat-label">Assets</div>
+                                        <div class="wallet-stat-value">${walletAssets.length}</div>
+                                    </div>
+                                    <div class="wallet-stat-item">
+                                        <div class="wallet-stat-label">24h Change</div>
+                                        <div class="wallet-stat-value" style="color: ${avgChange >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">
+                                            ${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderWallets() {
+            return renderOverview();
+        }
+
+        function renderAssets() {
+            if (assets.length === 0) {
+                return '<div class="empty-state"><p>No assets found</p></div>';
+            }
+
+            return `
+                <div class="asset-list">
+                    ${assets.map(asset => {
+                        const value = asset.balance * asset.price;
+                        const change = asset.change24h || 0;
+                        
+                        return `
+                            <div class="asset-item">
+                                <div class="asset-info">
+                                    <div class="asset-icon">${asset.symbol.charAt(0)}</div>
+                                    <div>
+                                        <div class="asset-name">${asset.name}</div>
+                                        <div class="asset-symbol">${asset.symbol} • ${asset.chain.toUpperCase()}</div>
+                                    </div>
+                                </div>
+                                <div class="asset-value">
+                                    <div style="font-weight: 600;">$${asset.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</div>
+                                    <div style="font-size: 11px; color: var(--text-secondary);">Price</div>
+                                </div>
+                                <div class="asset-value">
+                                    <div style="font-weight: 600;">${asset.balance.toLocaleString('en-US', { maximumFractionDigits: 4 })}</div>
+                                    <div style="font-size: 11px; color: var(--text-secondary);">Balance</div>
+                                </div>
+                                <div class="asset-value">
+                                    <div style="font-weight: 600;">$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                                    <div style="font-size: 11px; color: var(--text-secondary);">Value</div>
+                                </div>
+                                <div class="asset-value">
+                                    <span class="stat-change ${change >= 0 ? 'positive' : 'negative'}">
+                                        ${change >= 0 ? '↑' : '↓'} ${Math.abs(change).toFixed(2)}%
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function renderModal() {
+            return `
+                <div class="modal" id="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2 class="modal-title" id="modal-title">Add Wallet</h2>
+                            <button class="modal-close" onclick="closeModal()">×</button>
+                        </div>
+                        <div id="modal-body"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openAddWalletModal() {
+            document.getElementById('modal-title').textContent = 'Add Wallet';
+            document.getElementById('modal-body').innerHTML = `
+                <form id="wallet-form">
+                    <div class="form-group">
+                        <label>Wallet Label (Optional)</label>
+                        <input type="text" id="wallet-label" placeholder="My Main Wallet">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Blockchain</label>
+                        <select id="wallet-chain" required>
+                            <option value="">Select Chain</option>
+                            <option value="ethereum">Ethereum</option>
+                            <option value="bsc">Binance Smart Chain</option>
+                            <option value="polygon">Polygon</option>
+                            <option value="solana">Solana</option>
+                            <option value="avalanche">Avalanche</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Wallet Address</label>
+                        <input type="text" id="wallet-address" required placeholder="0x...">
+                    </div>
+                    
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">Add Wallet</button>
+                </form>
+            `;
+
+            document.getElementById('wallet-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const label = document.getElementById('wallet-label').value;
+                const chain = document.getElementById('wallet-chain').value;
+                const address = document.getElementById('wallet-address').value;
+                
+                await addWallet(address, chain, label);
+            });
+
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function openImportCSVModal() {
+            document.getElementById('modal-title').textContent = 'Import Wallets from CSV';
+            document.getElementById('modal-body').innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">
+                        Upload a CSV file with your wallet addresses. The file should have these columns:
+                    </p>
+                    
+                    <div style="background: var(--bg-primary); padding: 15px; border-radius: 6px; margin-bottom: 15px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+                        <div style="color: var(--accent-blue); margin-bottom: 5px;">Required format:</div>
+                        <code style="color: var(--text-primary);">address,chain,label</code>
+                        <div style="margin-top: 10px; color: var(--text-secondary);">
+                            <div>0x742d35...,ethereum,My Main Wallet</div>
+                            <div>0x8f3b2...,bsc,BSC Trading</div>
+                            <div>H4k9sD...,solana,Solana Wallet</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button type="button" class="btn-secondary" onclick="downloadCSVTemplate()" style="flex: 1;">
+                            📄 Download Template
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="downloadCurrentWallets()" style="flex: 1;">
+                            💾 Export Current
+                        </button>
+                    </div>
+                </div>
+                
+                <form id="csv-import-form">
+                    <div class="form-group">
+                        <label>Select CSV File</label>
+                        <input type="file" id="csv-file" accept=".csv" required 
+                               style="width: 100%; padding: 14px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); cursor: pointer;">
+                    </div>
+                    
+                    <div id="csv-preview" style="display: none; margin-top: 15px;">
+                        <label style="display: block; margin-bottom: 10px;">Preview (first 5 rows):</label>
+                        <div id="csv-preview-content" style="background: var(--bg-primary); padding: 15px; border-radius: 6px; max-height: 200px; overflow-y: auto; font-size: 11px; font-family: 'JetBrains Mono', monospace;">
+                        </div>
+                        <div id="csv-stats" style="margin-top: 10px; font-size: 12px; color: var(--text-secondary);"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 15px;">
+                        Import Wallets
+                    </button>
+                </form>
+                
+                <div id="import-progress" style="display: none; margin-top: 15px;">
+                    <div style="background: var(--bg-primary); padding: 15px; border-radius: 6px;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
+                            <span id="import-status">Importing wallets...</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
+                            <div id="import-progress-bar" style="width: 0%; height: 100%; background: var(--accent-green); transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // File preview handler
+            document.getElementById('csv-file').addEventListener('change', handleCSVPreview);
+
+            // Form submit handler
+            document.getElementById('csv-import-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await importWalletsFromCSV();
+            });
+
+            document.getElementById('modal').classList.add('active');
+        }
+
+        async function handleCSVPreview(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const text = await file.text();
+            const lines = text.trim().split('\n');
+            
+            if (lines.length < 2) {
+                showError('CSV file is empty or invalid');
+                return;
+            }
+
+            const preview = document.getElementById('csv-preview');
+            const previewContent = document.getElementById('csv-preview-content');
+            const stats = document.getElementById('csv-stats');
+
+            // Parse and display preview
+            const previewLines = lines.slice(0, 6); // Header + 5 rows
+            let html = '<div style="color: var(--accent-blue); margin-bottom: 5px;">' + previewLines[0] + '</div>';
+            
+            for (let i = 1; i < previewLines.length && i < 6; i++) {
+                html += '<div style="color: var(--text-secondary); margin-top: 3px;">' + previewLines[i] + '</div>';
+            }
+
+            previewContent.innerHTML = html;
+            stats.textContent = `Found ${lines.length - 1} wallet(s) to import`;
+            preview.style.display = 'block';
+        }
+
+        async function importWalletsFromCSV() {
+            const fileInput = document.getElementById('csv-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showError('Please select a CSV file');
+                return;
+            }
+
+            try {
+                const text = await file.text();
+                const lines = text.trim().split('\n');
+                
+                if (lines.length < 2) {
+                    showError('CSV file must have at least a header row and one data row');
+                    return;
+                }
+
+                // Hide form, show progress
+                document.getElementById('csv-import-form').style.display = 'none';
+                document.getElementById('import-progress').style.display = 'block';
+
+                const header = lines[0].toLowerCase().split(',').map(h => h.trim());
+                const addressIndex = header.indexOf('address');
+                const chainIndex = header.indexOf('chain');
+                const labelIndex = header.indexOf('label');
+
+                if (addressIndex === -1 || chainIndex === -1) {
+                    throw new Error('CSV must have "address" and "chain" columns');
+                }
+
+                const walletsToImport = [];
+                
+                // Parse CSV data
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    const values = line.split(',').map(v => v.trim());
+                    const address = values[addressIndex];
+                    const chain = values[chainIndex]?.toLowerCase();
+                    const label = labelIndex !== -1 ? values[labelIndex] : `Imported Wallet ${i}`;
+
+                    if (address && chain) {
+                        // Validate chain
+                        const validChains = ['ethereum', 'bsc', 'polygon', 'solana', 'avalanche'];
+                        if (validChains.includes(chain)) {
+                            walletsToImport.push({ address, chain, label });
+                        } else {
+                            console.warn(`Invalid chain "${chain}" for address ${address}, skipping`);
+                        }
+                    }
+                }
+
+                if (walletsToImport.length === 0) {
+                    throw new Error('No valid wallets found in CSV');
+                }
+
+                // Import wallets one by one
+                let imported = 0;
+                let failed = 0;
+
+                for (let i = 0; i < walletsToImport.length; i++) {
+                    const wallet = walletsToImport[i];
+                    const progress = ((i + 1) / walletsToImport.length) * 100;
+                    
+                    document.getElementById('import-progress-bar').style.width = progress + '%';
+                    document.getElementById('import-status').textContent = 
+                        `Importing ${i + 1} of ${walletsToImport.length}...`;
+
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('wallets')
+                            .insert([
+                                { 
+                                    user_id: currentUser.id, 
+                                    address: wallet.address, 
+                                    chain: wallet.chain, 
+                                    label: wallet.label 
+                                }
+                            ])
+                            .select();
+
+                        if (error) {
+                            console.error(`Failed to import ${wallet.address}:`, error);
+                            failed++;
+                        } else {
+                            wallets.push(data[0]);
+                            imported++;
+                        }
+                    } catch (error) {
+                        console.error(`Error importing ${wallet.address}:`, error);
+                        failed++;
+                    }
+
+                    // Small delay to avoid overwhelming the database
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                // Show results
+                closeModal();
+                
+                if (imported > 0) {
+                    showMessage(`✅ Successfully imported ${imported} wallet(s)${failed > 0 ? `. ${failed} failed.` : '!'}`);
+                    await refreshPrices();
+                    renderDashboard();
+                } else {
+                    showError(`Failed to import wallets. Please check the CSV format.`);
+                }
+
+            } catch (error) {
+                console.error('CSV import error:', error);
+                showError('Failed to import CSV: ' + error.message);
+                document.getElementById('csv-import-form').style.display = 'block';
+                document.getElementById('import-progress').style.display = 'none';
+            }
+        }
+
+        function downloadCSVTemplate() {
+            const template = `address,chain,label
+0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb5,ethereum,My Main Wallet
+0x8f3b2dE5f17F57e5051E8f8C37b3E8e27C7E8d9f,bsc,BSC Trading Wallet
+H4k9sDv7nW8pJqK3mN5yT6rL2xQ9wE1fG8hB3jC5dA7k,solana,Solana Wallet
+0x1234567890abcdef1234567890abcdef12345678,polygon,Polygon Wallet
+0xabcdef1234567890abcdef1234567890abcdef12,avalanche,Avalanche Wallet`;
+
+            const blob = new Blob([template], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'wallet-import-template.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showMessage('📄 Template downloaded! Fill it out and import your wallets.');
+        }
+
+        function downloadCurrentWallets() {
+            if (wallets.length === 0) {
+                showError('No wallets to export');
+                return;
+            }
+
+            let csv = 'address,chain,label\n';
+            wallets.forEach(wallet => {
+                const label = (wallet.label || '').replace(/,/g, ' '); // Remove commas from label
+                csv += `${wallet.address},${wallet.chain},${label}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cryptovault-wallets-export.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showMessage('💾 Wallets exported successfully!');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        function changeView(view) {
+            currentView = view;
+            renderDashboard();
+        }
+
+        function viewWalletDetails(walletId) {
+            // You can implement detailed wallet view here
+            console.log('View wallet:', walletId);
+        }
+
+        function showError(message) {
+            // Remove existing error if present
+            const existingError = document.getElementById('global-error');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'global-error';
+            errorDiv.className = 'error-message';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 500px;
+                z-index: 9999;
+                animation: slideDown 0.3s ease;
+            `;
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                if (errorDiv.parentNode) {
+                    errorDiv.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(() => errorDiv.remove(), 300);
+                }
+            }, 5000);
+        }
+
+        function showMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 255, 136, 0.1);
+                border: 1px solid var(--accent-green);
+                color: var(--accent-green);
+                padding: 15px 25px;
+                border-radius: 8px;
+                z-index: 9999;
+                animation: slideDown 0.3s ease;
+                max-width: 500px;
+                text-align: center;
+            `;
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => messageDiv.remove(), 300);
+            }, 4000);
+        }
+        
+        // Add fadeOut animation to CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                from { opacity: 1; transform: translateX(-50%) translateY(0); }
+                to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Click outside modal to close
+        window.addEventListener('click', (e) => {
+            const modal = document.getElementById('modal');
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Initialize app on load
+        initApp();
+    </script>
+</body>
+</html>
