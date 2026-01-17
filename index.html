@@ -566,48 +566,366 @@
 
             header {
                 flex-direction: column;
-                gap: 20px;
-                align-items: flex-start;
+                gap: 15px;
+                align-items: stretch;
+                padding: 20px 0;
             }
 
             .logo {
                 font-size: 24px;
+                text-align: center;
+            }
+
+            .header-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header-actions > div {
+                order: -1;
+                justify-content: center !important;
+            }
+
+            .user-email {
+                text-align: center;
+                width: 100%;
+            }
+
+            button {
+                width: 100%;
+                padding: 14px 24px;
+                font-size: 13px;
+            }
+
+            .btn-refresh {
+                width: 100%;
             }
 
             .stats-grid {
                 grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-value {
+                font-size: 32px;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .controls > div {
+                width: 100%;
+            }
+
+            .view-toggle {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .view-toggle button {
+                flex: 1;
+                padding: 10px 12px;
+                font-size: 11px;
+            }
+
+            .wallet-stats {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .wallet-stat-item {
+                text-align: left;
+                padding: 12px;
+                background: var(--bg-primary);
+                border-radius: 6px;
+            }
+
+            .asset-item {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 20px;
+            }
+
+            .asset-info {
+                padding-bottom: 12px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .asset-value {
+                text-align: left;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .asset-value > div:first-child {
+                font-size: 15px;
+            }
+
+            .auth-box {
+                padding: 30px 20px;
+                margin: 0 10px;
+            }
+
+            .auth-title {
+                font-size: 28px;
+            }
+
+            .modal-content {
+                padding: 25px 20px;
+                margin: 0 10px;
+                max-height: 85vh;
+            }
+
+            .modal-title {
+                font-size: 20px;
+            }
+
+            /* Better touch targets for mobile */
+            input, select, button {
+                min-height: 44px; /* iOS recommended touch target */
+            }
+
+            /* Improve wallet cards for mobile */
+            .wallet-card {
+                padding: 20px;
+            }
+
+            .wallet-card:active {
+                transform: scale(0.98);
+                background: var(--bg-tertiary);
+            }
+
+            /* Stack form buttons on mobile */
+            .modal-content form button {
+                margin-top: 15px;
+            }
+
+            /* Better spacing for empty states */
+            .empty-state {
+                padding: 60px 20px;
+            }
+
+            .empty-state-icon {
+                font-size: 48px;
+            }
+
+            .empty-state-title {
+                font-size: 20px;
+            }
+
+            /* Mobile-friendly table alternatives */
+            .asset-list {
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+
+            /* Compact chain badges */
+            .chain-badge {
+                padding: 4px 10px;
+                font-size: 9px;
+            }
+
+            /* Mobile CSV import improvements */
+            #csv-preview-content {
+                font-size: 10px;
+                padding: 12px;
+            }
+
+            /* Better error messages on mobile */
+            .error-message {
+                font-size: 13px;
+                padding: 15px;
+                margin: 0 10px;
+            }
+
+            /* Optimize modal for mobile */
+            .modal {
+                padding: 10px;
+                align-items: flex-start;
+                padding-top: 40px;
+            }
+
+            /* Loading indicator positioning */
+            #loading-indicator {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                font-size: 11px;
+            }
+
+            /* Improve form groups spacing */
+            .form-group {
+                margin-bottom: 18px;
+            }
+
+            label {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+
+            /* Better stat changes display */
+            .stat-change {
+                font-size: 11px;
+                padding: 4px 8px;
+            }
+
+            /* Wallet address truncation for mobile */
+            .wallet-address {
+                font-size: 10px;
+                word-break: break-all;
+            }
+
+            /* Asset symbol styling */
+            .asset-symbol {
+                font-size: 10px;
+            }
+
+            /* Improve asset icon size */
+            .asset-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 14px;
+            }
+        }
+
+        /* iPhone X and newer (with notch) */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            .app-container {
+                padding-top: max(20px, env(safe-area-inset-top));
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+                padding-left: max(20px, env(safe-area-inset-left));
+                padding-right: max(20px, env(safe-area-inset-right));
+            }
+
+            header {
+                padding-top: 10px;
+            }
+
+            .modal {
+                padding-top: max(40px, env(safe-area-inset-top));
+            }
+        }
+
+        /* Small phones (iPhone SE, etc) */
+        @media (max-width: 375px) {
+            .logo {
+                font-size: 20px;
             }
 
             .stat-value {
                 font-size: 28px;
             }
 
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .wallet-stats {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-
-            .asset-item {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-
-            .asset-value {
-                text-align: left;
+            button {
+                font-size: 12px;
+                padding: 12px 20px;
             }
 
             .auth-box {
-                padding: 30px;
+                padding: 25px 15px;
             }
 
             .modal-content {
-                padding: 25px;
+                padding: 20px 15px;
             }
+
+            .wallet-card {
+                padding: 15px;
+            }
+
+            .asset-item {
+                padding: 15px;
+            }
+
+            .view-toggle button {
+                font-size: 10px;
+                padding: 8px 10px;
+            }
+        }
+
+        /* Landscape mode optimization */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .auth-container {
+                min-height: auto;
+                padding: 20px 0;
+            }
+
+            .modal-content {
+                max-height: 80vh;
+            }
+
+            header {
+                padding: 15px 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+
+        /* Dark mode enhancement for iOS */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: var(--bg-primary);
+            }
+        }
+
+        /* Smooth scrolling for iOS */
+        * {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Disable iOS text size adjustment */
+        body {
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* Better input styling for iOS */
+        input, select {
+            -webkit-appearance: none;
+            appearance: none;
+            border-radius: 6px;
+        }
+
+        /* Remove iOS input shadows */
+        input:focus, select:focus {
+            outline: none;
+        }
+
+        /* Prevent iOS zoom on input focus */
+        @media (max-width: 768px) {
+            input, select, textarea {
+                font-size: 16px !important; /* Prevents zoom on iOS */
+            }
+        }
+
+        /* Better button press states for mobile */
+        button:active {
+            transform: scale(0.97);
+            transition: transform 0.1s ease;
+        }
+
+        /* Improve pull-to-refresh experience */
+        body {
+            overscroll-behavior-y: contain;
+        }
+
+        /* PWA viewport meta optimization */
+        @viewport {
+            width: device-width;
+            initial-scale: 1;
+            maximum-scale: 1;
+            user-scalable: no;
         }
 
         .empty-state {
